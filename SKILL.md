@@ -34,8 +34,10 @@ metadata:
 ## 索引位置
 
 ```
-~/repos/skill-market/marketplace.json
+~/repos/skill-market/data/marketplace.json
 ```
+
+**注意**：`marketplace.json` 在首次运行 `setup.sh` 时自动从网络下载（约 80KB），无需手动获取。
 
 ## marketplace.json 结构
 

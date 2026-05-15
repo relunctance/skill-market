@@ -1,0 +1,14 @@
+# marketplace 数据（首次安装时下载）
+data/
+*.json
+
+# 临时文件
+*.zip
+*.tmp
+
+# macOS
+.DS_Store
+
+# Linux
+*.swp
+*.swo

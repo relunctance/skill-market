@@ -10,9 +10,12 @@ skill-market 是一个本地 skill-market 搜索工具，提供了 205 个 AI Ag
 
 ```
 skill-market/
-├── marketplace.json       # 插件索引（205个插件）
-├── plugins/              # 官方插件目录（仅索引）
-├── external_plugins/     # 第三方插件目录（仅索引）
+├── data/                   # marketplace.json 下载目录（自动生成）
+│   └── marketplace.json    # 插件索引（205个插件）
+├── scripts/
+│   └── setup.sh           # 安装脚本（含自动下载）
+├── plugins/               # 官方插件目录（仅索引）
+├── external_plugins/      # 第三方插件目录（仅索引）
 └── references/
     └── marketplace-search-guide.md  # 检索指南
 ```

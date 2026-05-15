@@ -85,7 +85,7 @@ import json
 import sys
 from pathlib import Path
 
-MARKETPLACE = Path.home() / "repos/skill-market/marketplace.json"
+MARKETPLACE = Path.home() / "repos/skill-market/data/marketplace.json"
 
 def search_marketplace(query: str, field: str = "all") -> list[dict]:
     """搜索 marketplace.json"""
