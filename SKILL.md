@@ -37,9 +37,31 @@ metadata:
 ~/repos/skill-market/data/marketplace.json
 ```
 
-**注意**：`marketplace.json` 在首次运行 `setup.sh` 时自动从网络下载（约 80KB），无需手动获取。
+## 自动下载机制
 
-## marketplace.json 结构
+`marketplace.json` 在首次访问时自动从网络下载（约 80KB），无需手动获取。
+
+**下载逻辑**（在任何检索命令前自动执行）：
+
+```bash
+MARKETPLACE_JSON="$HOME/repos/skill-market/data/marketplace.json"
+MARKETPLACE_ZIP="/tmp/skill-market.zip"
+MARKETPLACE_URL="https://download.codebuddy.cn/plugin-marketplace/codebuddy-plugins-official.zip"
+
+if [ ! -f "$MARKETPLACE_JSON" ]; then
+    echo "[skill-market] 首次使用，正在下载 marketplace.json..."
+    mkdir -p "$(dirname "$MARKETPLACE_JSON")"
+    curl -sL "$MARKETPLACE_URL" -o "$MARKETPLACE_ZIP" && \
+    unzip -j -o "$MARKETPLACE_ZIP" ".codebuddy-plugin/marketplace.json" -d "$(dirname "$MARKETPLACE_JSON")/" && \
+    rm -f "$MARKETPLACE_ZIP"
+    echo "[skill-market] 下载完成"
+fi
+```
+
+**手动更新**：
+```bash
+bash ~/repos/skill-market/scripts/setup.sh --force-download
+```
 
 ```json
 {
@@ -70,26 +92,29 @@ metadata:
 ## 快速检索命令
 
 ```bash
-# 加载 marketplace.json
-python3 -c "
-import json
-with open('~/repos/skill-market/marketplace.json') as f:
-    data = json.load(f)
-plugins = data['plugins']
-"
+# 自动下载 + 搜索（首次自动下载，之后直接搜）
+MARKETPLACE_JSON="$HOME/repos/skill-market/data/marketplace.json"
+MARKETPLACE_URL="https://download.codebuddy.cn/plugin-marketplace/codebuddy-plugins-official.zip"
+
+# 首次自动下载
+if [ ! -f "$MARKETPLACE_JSON" ]; then
+    echo "[skill-market] 首次使用，正在下载 marketplace.json..."
+    mkdir -p "$(dirname "$MARKETPLACE_JSON")"
+    curl -sL "$MARKETPLACE_URL" -o /tmp/skill-market.zip && \
+    unzip -j -o /tmp/skill-market.zip ".codebuddy-plugin/marketplace.json" -d "$(dirname "$MARKETPLACE_JSON")/" && \
+    rm -f /tmp/skill-market.zip
+fi
 
 # 搜索示例
 python3 -c "
 import json, sys
-with open('~/repos/skill-market/marketplace.json') as f:
+with open('$HOME/repos/skill-market/data/marketplace.json') as f:
     data = json.load(f)
 query = sys.argv[1] if len(sys.argv) > 1 else ''
-results = [p for p in data['plugins']
-           if query.lower() in p.get('name','').lower()
-           or query.lower() in p.get('description','').lower()]
-for p in results[:10]:
-    print(f\"{p['name']}: {p.get('description','无描述')[:60]}\")
-"
+for p in data['plugins']:
+    if query.lower() in p.get('name','').lower() or query.lower() in p.get('description','').lower():
+        print(f\"{p['name']}: {p.get('description','无描述')[:60]}\")
+" '<搜索关键词>'
 ```
 
 ## 检索字段优先级
