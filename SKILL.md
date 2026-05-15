@@ -31,30 +31,35 @@ metadata:
 - `marketplace 搜索`
 - `找 XX 相关的插件`
 
-## 索引位置
+## 数据文件
 
 ```
-~/repos/skill-market/data/marketplace.json
+~/repos/skill-market/data/
+├── marketplace.zip      # 完整插件包（15MB，427个SKILL.md）
+├── marketplace/         # 解压后的插件目录（检索用）
+└── marketplace.json   # 旧版索引（仅205个，已弃用）
 ```
 
-## 自动下载机制
+## 自动下载 + 解压机制
 
-`marketplace.json` 在首次访问时自动从网络下载（约 80KB），无需手动获取。
-
-**下载逻辑**（在任何检索命令前自动执行）：
+首次使用时自动下载并解压 `marketplace.zip`。
 
 ```bash
-MARKETPLACE_JSON="$HOME/repos/skill-market/data/marketplace.json"
-MARKETPLACE_ZIP="/tmp/skill-market.zip"
+MARKETPLACE_DIR="$HOME/repos/skill-market/data"
+MARKETPLACE_ZIP="$MARKETPLACE_DIR/marketplace.zip"
+MARKETPLACE_EXTRACT="$MARKETPLACE_DIR/marketplace"
 MARKETPLACE_URL="https://download.codebuddy.cn/plugin-marketplace/codebuddy-plugins-official.zip"
 
-if [ ! -f "$MARKETPLACE_JSON" ]; then
-    echo "[skill-market] 首次使用，正在下载 marketplace.json..."
-    mkdir -p "$(dirname "$MARKETPLACE_JSON")"
-    curl -sL "$MARKETPLACE_URL" -o "$MARKETPLACE_ZIP" && \
-    unzip -j -o "$MARKETPLACE_ZIP" ".codebuddy-plugin/marketplace.json" -d "$(dirname "$MARKETPLACE_JSON")/" && \
-    rm -f "$MARKETPLACE_ZIP"
-    echo "[skill-market] 下载完成"
+# 首次自动下载 + 解压
+if [ ! -f "$MARKETPLACE_ZIP" ]; then
+    echo "[skill-market] 首次使用，正在下载插件包（15MB）..."
+    mkdir -p "$MARKETPLACE_DIR"
+    curl -sL "$MARKETPLACE_URL" -o "$MARKETPLACE_ZIP"
+fi
+
+if [ ! -d "$MARKETPLACE_EXTRACT" ]; then
+    echo "[skill-market] 正在解压..."
+    unzip -q "$MARKETPLACE_ZIP" -d "$MARKETPLACE_EXTRACT"
 fi
 ```
 
@@ -62,6 +67,22 @@ fi
 ```bash
 bash ~/repos/skill-market/scripts/setup.sh --force-download
 ```
+
+## 检索方式
+
+解压后用 `find` + `grep` 检索：
+
+```bash
+# 搜索示例
+QUERY="brainstorming"
+find "$HOME/repos/skill-market/data/marketplace" -name "SKILL.md" -exec grep -l -i "$QUERY" {} \; 2>/dev/null
+
+# 查看结果内容
+find "$HOME/repos/skill-market/data/marketplace" -name "SKILL.md" -exec grep -l -i "brainstorming" {} \; | \
+    xargs head -20 2>/dev/null
+```
+
+**注意**：marketplace.json 索引不完整（仅205个），已弃用。现解压后直接搜索全部 427 个 SKILL.md。
 
 ```json
 {
@@ -92,29 +113,33 @@ bash ~/repos/skill-market/scripts/setup.sh --force-download
 ## 快速检索命令
 
 ```bash
-# 自动下载 + 搜索（首次自动下载，之后直接搜）
-MARKETPLACE_JSON="$HOME/repos/skill-market/data/marketplace.json"
+# 自动下载 + 解压 + find 搜索
+MARKETPLACE_DIR="$HOME/repos/skill-market/data"
+MARKETPLACE_ZIP="$MARKETPLACE_DIR/marketplace.zip"
+MARKETPLACE_EXTRACT="$MARKETPLACE_DIR/marketplace"
 MARKETPLACE_URL="https://download.codebuddy.cn/plugin-marketplace/codebuddy-plugins-official.zip"
 
-# 首次自动下载
-if [ ! -f "$MARKETPLACE_JSON" ]; then
-    echo "[skill-market] 首次使用，正在下载 marketplace.json..."
-    mkdir -p "$(dirname "$MARKETPLACE_JSON")"
-    curl -sL "$MARKETPLACE_URL" -o /tmp/skill-market.zip && \
-    unzip -j -o /tmp/skill-market.zip ".codebuddy-plugin/marketplace.json" -d "$(dirname "$MARKETPLACE_JSON")/" && \
-    rm -f /tmp/skill-market.zip
+# 首次自动下载 + 解压
+if [ ! -f "$MARKETPLACE_ZIP" ]; then
+    echo "[skill-market] 首次使用，正在下载插件包（15MB）..."
+    mkdir -p "$MARKETPLACE_DIR"
+    curl -sL "$MARKETPLACE_URL" -o "$MARKETPLACE_ZIP"
 fi
 
-# 搜索示例
-python3 -c "
-import json, sys
-with open('$HOME/repos/skill-market/data/marketplace.json') as f:
-    data = json.load(f)
-query = sys.argv[1] if len(sys.argv) > 1 else ''
-for p in data['plugins']:
-    if query.lower() in p.get('name','').lower() or query.lower() in p.get('description','').lower():
-        print(f\"{p['name']}: {p.get('description','无描述')[:60]}\")
-" '<搜索关键词>'
+if [ ! -d "$MARKETPLACE_EXTRACT" ]; then
+    echo "[skill-market] 正在解压..."
+    unzip -q "$MARKETPLACE_ZIP" -d "$MARKETPLACE_EXTRACT"
+fi
+
+# 搜索
+QUERY="${1:-brainstorming}"
+find "$MARKETPLACE_EXTRACT" -name "SKILL.md" -exec grep -l -i "$QUERY" {} \; 2>/dev/null | head -10
+```
+
+**查看结果内容**：
+```bash
+find "$MARKETPLACE_EXTRACT" -name "SKILL.md" -exec grep -l -i "brainstorming" {} \; | \
+    xargs head -20 2>/dev/null
 ```
 
 ## 检索字段优先级
